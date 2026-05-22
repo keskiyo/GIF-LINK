@@ -1,22 +1,30 @@
-import { Dices, Flame, Search } from 'lucide-react'
+import { ChevronDown, Dices, Flame, Languages, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import {
+	LANGUAGE_STORAGE_KEY,
+	type LanguageCode,
+	languageOptions,
+	messages,
+} from '../i18n'
 import type { GifMode } from '../types/gif'
 
 interface HeaderProps {
 	activeMode: GifMode
+	language: LanguageCode
 	onSearchMode: () => void
 	onTrending: () => void
 	onRandom: () => void
+	onLanguageChange: (language: LanguageCode) => void
 }
 
 const navItems: Array<{
 	mode: GifMode
-	label: string
+	labelKey: 'search' | 'trending' | 'random'
 	icon: typeof Search
 }> = [
-	{ mode: 'search', label: 'ПОИСК', icon: Search },
-	{ mode: 'trending', label: 'ТРЕНДЫ', icon: Flame },
-	{ mode: 'random', label: 'РАНДОМ', icon: Dices },
+	{ mode: 'search', labelKey: 'search', icon: Search },
+	{ mode: 'trending', labelKey: 'trending', icon: Flame },
+	{ mode: 'random', labelKey: 'random', icon: Dices },
 ]
 
 const logoPalettes = [
@@ -106,17 +114,28 @@ const getRandomPalette = (currentPalette: string[]) => {
 
 export function Header({
 	activeMode,
+	language,
 	onSearchMode,
 	onTrending,
 	onRandom,
+	onLanguageChange,
 }: HeaderProps) {
 	const [logoColors, setLogoColors] = useState(logoPalettes[0])
 	const [isLogoRebuilding, setIsLogoRebuilding] = useState(false)
+	const t = messages[language]
+	const activeLanguage =
+		languageOptions.find(option => option.value === language) ??
+		languageOptions[0]
 
 	const actions: Record<GifMode, () => void> = {
 		search: onSearchMode,
 		trending: onTrending,
 		random: onRandom,
+	}
+
+	const handleLanguageChange = (nextLanguage: LanguageCode) => {
+		window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage)
+		onLanguageChange(nextLanguage)
 	}
 
 	const logoTileOffsets = useMemo(
@@ -159,8 +178,8 @@ export function Header({
 
 	return (
 		<header className='flex flex-col items-center gap-7 pt-9 sm:pt-12'>
-			<nav className='flex w-full max-w-xl items-center justify-center gap-2 rounded-full bg-white/42 p-2 shadow-control backdrop-blur'>
-				{navItems.map(({ mode, label, icon: Icon }) => {
+			<nav className='relative z-50 flex w-full max-w-2xl items-center justify-center gap-2 rounded-full bg-white/42 p-2 shadow-control backdrop-blur'>
+				{navItems.map(({ mode, labelKey, icon: Icon }) => {
 					const isActive = activeMode === mode
 
 					return (
@@ -175,13 +194,49 @@ export function Header({
 							}`}
 						>
 							<Icon aria-hidden size={18} strokeWidth={2.7} />
-							<span>{label}</span>
+							<span>{t.nav[labelKey]}</span>
 						</button>
 					)
 				})}
+				<div className='group relative z-50 flex-none'>
+					<button
+						type='button'
+						aria-label={t.nav.chooseLanguage}
+						className='flex min-h-11 items-center justify-center gap-1 rounded-full bg-white/60 px-3 text-sm font-black tracking-[0.08em] text-slate-800 transition hover:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-200'
+					>
+						<Languages aria-hidden size={18} strokeWidth={2.7} />
+						<span>{activeLanguage.short}</span>
+						<ChevronDown aria-hidden size={15} strokeWidth={3} />
+					</button>
+
+					<div className='invisible absolute right-0 top-full z-50 w-40 pt-2 opacity-0 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100'>
+						<div className='rounded-2xl border-4 border-slate-950 bg-white p-2 shadow-control'>
+							{languageOptions.map(option => {
+								const isActive = option.value === language
+
+								return (
+									<button
+										key={option.value}
+										type='button'
+										onClick={() =>
+											handleLanguageChange(option.value)
+										}
+										className={`w-full rounded-xl px-3 py-2 text-left text-sm font-black transition ${
+											isActive
+												? 'bg-slate-950 text-white'
+												: 'text-slate-800 hover:bg-emerald-100'
+										}`}
+									>
+										{option.label}
+									</button>
+								)
+							})}
+						</div>
+					</div>
+				</div>
 			</nav>
 
-			<div className='flex items-center gap-4'>
+			<div className='relative z-10 flex items-center gap-4'>
 				<div className='grid h-16 w-16 shrink-0 grid-cols-4 grid-rows-4 rounded border-4 border-slate-950 shadow-control sm:h-20 sm:w-20'>
 					{logoColors.map((color, index) => (
 						<span

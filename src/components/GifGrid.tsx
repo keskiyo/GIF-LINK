@@ -1,10 +1,16 @@
 import { AlertTriangle, RefreshCw, SearchX } from 'lucide-react'
 import { type RefObject, useEffect, useMemo, useState } from 'react'
+import {
+	getLocalizedErrorMessage,
+	type LanguageCode,
+	messages,
+} from '../i18n'
 import type { GifItem } from '../types/gif'
 import { GifCard } from './GifCard'
 
 interface GifGridProps {
 	gifs: GifItem[]
+	language: LanguageCode
 	isLoading: boolean
 	isLoadingMore: boolean
 	error: Error | null
@@ -19,6 +25,7 @@ interface GifGridProps {
 
 export function GifGrid({
 	gifs,
+	language,
 	isLoading,
 	isLoadingMore,
 	error,
@@ -30,6 +37,7 @@ export function GifGrid({
 	onOpen,
 	loadMoreRef,
 }: GifGridProps) {
+	const t = messages[language]
 	const [columnCount, setColumnCount] = useState(1)
 
 	useEffect(() => {
@@ -68,7 +76,7 @@ export function GifGrid({
 			<section className='mx-auto mt-10 flex min-h-80 max-w-xl items-center justify-center'>
 				<img
 					src='/DANCE_CAT.gif'
-					alt='Загрузка GIF'
+					alt={t.states.loadingGif}
 					className='w-full max-w-xs object-contain'
 				/>
 			</section>
@@ -84,10 +92,10 @@ export function GifGrid({
 					size={42}
 				/>
 				<h2 className='animated-text-gradient animated-text-gradient-status text-2xl font-black'>
-					Ошибка загрузки
+					{t.states.loadError}
 				</h2>
 				<p className='mt-2 text-sm font-semibold text-slate-600'>
-					{error.message}
+					{getLocalizedErrorMessage(language, error.message)}
 				</p>
 				<button
 					type='button'
@@ -95,7 +103,7 @@ export function GifGrid({
 					className='mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-slate-950 px-5 font-black uppercase tracking-wide text-white transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-200'
 				>
 					<RefreshCw aria-hidden size={18} />
-					Повторить
+					{t.actions.retry}
 				</button>
 			</section>
 		)
@@ -110,10 +118,10 @@ export function GifGrid({
 					size={44}
 				/>
 				<h2 className='animated-text-gradient animated-text-gradient-status text-2xl font-black'>
-					Введите запрос
+					{t.states.enterQuery}
 				</h2>
 				<p className='mt-2 text-sm font-semibold text-slate-600'>
-					Начните набирать текст в поле для поиска.
+					{t.states.enterQueryHint}
 				</p>
 			</section>
 		)
@@ -128,10 +136,10 @@ export function GifGrid({
 					size={44}
 				/>
 				<h2 className='animated-text-gradient animated-text-gradient-status text-2xl font-black'>
-					Ничего не найдено
+					{t.states.notFound}
 				</h2>
 				<p className='mt-2 text-sm font-semibold text-slate-600'>
-					Попробуйте другой запрос.
+					{t.states.tryAnotherQuery}
 				</p>
 			</section>
 		)
@@ -151,6 +159,7 @@ export function GifGrid({
 							<GifCard
 								key={gif.id}
 								gif={gif}
+								language={language}
 								onCopy={onCopy}
 								onDownload={onDownload}
 								onOpen={onOpen}
@@ -168,7 +177,7 @@ export function GifGrid({
 					{isLoadingMore && (
 						<img
 							src='/DANCE_CAT.gif'
-							alt='Загрузка GIF'
+							alt={t.states.loadingGif}
 							className='h-24 w-24 object-contain'
 						/>
 					)}

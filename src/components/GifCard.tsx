@@ -1,14 +1,17 @@
 import { Download, Link } from 'lucide-react';
+import { type LanguageCode, messages } from '../i18n';
 import type { GifItem } from '../types/gif';
 
 interface GifCardProps {
   gif: GifItem;
+  language: LanguageCode;
   onCopy: (gif: GifItem) => void;
   onDownload: (gif: GifItem) => void;
   onOpen: (gif: GifItem) => void;
 }
 
-export function GifCard({ gif, onCopy, onDownload, onOpen }: GifCardProps) {
+export function GifCard({ gif, language, onCopy, onDownload, onOpen }: GifCardProps) {
+  const t = messages[language];
   const rawRatio = gif.width / gif.height;
   const cardRatio = Math.min(Math.max(rawRatio || 1, 0.72), 1.28);
 
@@ -21,7 +24,7 @@ export function GifCard({ gif, onCopy, onDownload, onOpen }: GifCardProps) {
         type="button"
         onClick={() => onOpen(gif)}
         className="block h-full w-full text-left focus:outline-none focus:ring-4 focus:ring-white/60"
-        aria-label={`Открыть ${gif.title}`}
+        aria-label={`${t.gif.open} ${gif.title}`}
       >
         <img
           src={gif.previewUrl}
@@ -39,8 +42,8 @@ export function GifCard({ gif, onCopy, onDownload, onOpen }: GifCardProps) {
             onCopy(gif);
           }}
           className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-950/86 text-white shadow-control backdrop-blur transition hover:bg-white hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-white/50"
-          title="Копировать ссылку"
-          aria-label="Копировать ссылку"
+          title={t.actions.copyLink}
+          aria-label={t.actions.copyLink}
         >
           <Link aria-hidden size={19} strokeWidth={2.7} />
         </button>
@@ -51,8 +54,8 @@ export function GifCard({ gif, onCopy, onDownload, onOpen }: GifCardProps) {
             onDownload(gif);
           }}
           className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-950/86 text-white shadow-control backdrop-blur transition hover:bg-teal-300 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-white/50"
-          title="Скачать GIF"
-          aria-label="Скачать GIF"
+          title={t.actions.downloadGif}
+          aria-label={t.actions.downloadGif}
         >
           <Download aria-hidden size={19} strokeWidth={2.7} />
         </button>

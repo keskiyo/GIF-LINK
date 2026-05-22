@@ -1,38 +1,42 @@
 import { Download, ExternalLink, Link, X } from 'lucide-react';
 import { useEffect } from 'react';
+import { type LanguageCode, messages } from '../i18n';
 import type { GifItem } from '../types/gif';
 
 interface GifModalProps {
   gif: GifItem | null;
+  language: LanguageCode;
   onClose: () => void;
   onCopy: (gif: GifItem) => void;
   onDownload: (gif: GifItem) => void;
 }
 
-const formatDate = (value: string | null) => {
+const formatDate = (value: string | null, locale: string, unavailable: string) => {
   if (!value) {
-    return 'Недоступно';
+    return unavailable;
   }
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return 'Недоступно';
+    return unavailable;
   }
 
-  return new Intl.DateTimeFormat('ru-RU').format(date);
+  return new Intl.DateTimeFormat(locale).format(date);
 };
 
-const formatBytes = (value: number | null) => {
+const formatBytes = (value: number | null, unavailable: string) => {
   if (!value) {
-    return 'Недоступно';
+    return unavailable;
   }
 
   const megabytes = value / 1024 / 1024;
   return `${megabytes.toFixed(megabytes >= 10 ? 0 : 1)} MB`;
 };
 
-export function GifModal({ gif, onClose, onCopy, onDownload }: GifModalProps) {
+export function GifModal({ gif, language, onClose, onCopy, onDownload }: GifModalProps) {
+  const t = messages[language];
+
   useEffect(() => {
     if (!gif) {
       return;
@@ -58,12 +62,12 @@ export function GifModal({ gif, onClose, onCopy, onDownload }: GifModalProps) {
   }
 
   const infoItems = [
-    ['Размеры', `${gif.width} x ${gif.height} px`],
-    ['Размер файла', formatBytes(gif.sizeBytes)],
-    ['Кадры', gif.frameCount ? String(gif.frameCount) : 'Недоступно'],
-    ['Рейтинг', gif.rating.toUpperCase()],
-    ['Автор', gif.username ? `@${gif.username}` : 'Недоступно'],
-    ['Дата добавления', formatDate(gif.uploadedAt)],
+    [t.modal.dimensions, `${gif.width} x ${gif.height} px`],
+    [t.modal.fileSize, formatBytes(gif.sizeBytes, t.modal.unavailable)],
+    [t.modal.frames, gif.frameCount ? String(gif.frameCount) : t.modal.unavailable],
+    [t.modal.rating, gif.rating.toUpperCase()],
+    [t.modal.author, gif.username ? `@${gif.username}` : t.modal.unavailable],
+    [t.modal.uploadedAt, formatDate(gif.uploadedAt, t.modal.dateLocale, t.modal.unavailable)],
   ];
 
   return (
@@ -82,8 +86,8 @@ export function GifModal({ gif, onClose, onCopy, onDownload }: GifModalProps) {
           type="button"
           onClick={onClose}
           className="absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-white/30"
-          aria-label="Закрыть"
-          title="Закрыть"
+          aria-label={t.modal.close}
+          title={t.modal.close}
         >
           <X aria-hidden size={24} strokeWidth={3} />
         </button>
@@ -100,8 +104,8 @@ export function GifModal({ gif, onClose, onCopy, onDownload }: GifModalProps) {
                 type="button"
                 onClick={() => onCopy(gif)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-950/80 text-white shadow-control backdrop-blur transition hover:bg-white hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-white/30"
-                title="Копировать ссылку"
-                aria-label="Копировать ссылку"
+                title={t.actions.copyLink}
+                aria-label={t.actions.copyLink}
               >
                 <Link aria-hidden size={19} strokeWidth={2.7} />
               </button>
@@ -109,8 +113,8 @@ export function GifModal({ gif, onClose, onCopy, onDownload }: GifModalProps) {
                 type="button"
                 onClick={() => onDownload(gif)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-950/80 text-white shadow-control backdrop-blur transition hover:bg-teal-300 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-white/30"
-                title="Скачать GIF"
-                aria-label="Скачать GIF"
+                title={t.actions.downloadGif}
+                aria-label={t.actions.downloadGif}
               >
                 <Download aria-hidden size={19} strokeWidth={2.7} />
               </button>
@@ -128,7 +132,7 @@ export function GifModal({ gif, onClose, onCopy, onDownload }: GifModalProps) {
               ))
             ) : (
               <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-black text-slate-300">
-                #нет-тегов
+                {t.modal.noTags}
               </span>
             )}
           </div>
@@ -143,7 +147,7 @@ export function GifModal({ gif, onClose, onCopy, onDownload }: GifModalProps) {
               rel="noreferrer"
               className="mt-3 inline-flex items-center gap-2 text-sm font-black text-teal-200 transition hover:text-teal-100"
             >
-              Открыть источник
+              {t.modal.openSource}
               <ExternalLink aria-hidden size={16} />
             </a>
           </div>

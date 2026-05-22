@@ -14,11 +14,13 @@ import { RandomGifPanel } from './components/RandomGifPanel'
 import { SearchBar } from './components/SearchBar'
 import { Suggestions } from './components/Suggestions'
 import { Toast } from './components/Toast'
+import { type RatingFilter, TrendFilters } from './components/TrendFilters'
 import {
-	type DateFilter,
-	type RatingFilter,
-	TrendFilters,
-} from './components/TrendFilters'
+	getLocalizedErrorMessage,
+	getStoredLanguage,
+	type LanguageCode,
+	messages,
+} from './i18n'
 import { useGifStore } from './store/useGifStore'
 import type { GifItem } from './types/gif'
 import { downloadGif } from './utils/download'
@@ -32,7 +34,7 @@ export default function App() {
 	const [loadedGifs, setLoadedGifs] = useState<GifItem[]>([])
 	const [hasMoreGifs, setHasMoreGifs] = useState(true)
 	const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false)
-	const [dateFilter, setDateFilter] = useState<DateFilter>('default')
+	const [language, setLanguage] = useState<LanguageCode>(getStoredLanguage)
 	const [ratingFilter, setRatingFilter] = useState<RatingFilter>('all')
 	const [selectedGif, setSelectedGif] = useState<GifItem | null>(null)
 	const searchWrapRef = useRef<HTMLDivElement>(null)
@@ -54,6 +56,7 @@ export default function App() {
 
 	const isSearchIdle = mode === 'search' && !lastSubmittedQuery
 	const gifOffset = gifPage * DEFAULT_GIF_LIMIT
+	const t = messages[language]
 
 	const gifQuery = useQuery({
 		queryKey: [
@@ -160,23 +163,8 @@ export default function App() {
 						gif => gif.rating.toLowerCase() === ratingFilter,
 					)
 
-		if (dateFilter === 'default') {
-			return ratingFilteredGifs
-		}
-
-		return [...ratingFilteredGifs].sort((left, right) => {
-			const leftTime = left.uploadedAt
-				? new Date(left.uploadedAt).getTime()
-				: 0
-			const rightTime = right.uploadedAt
-				? new Date(right.uploadedAt).getTime()
-				: 0
-
-			return dateFilter === 'newest'
-				? rightTime - leftTime
-				: leftTime - rightTime
-		})
-	}, [dateFilter, loadedGifs, mode, ratingFilter])
+		return ratingFilteredGifs
+	}, [loadedGifs, mode, ratingFilter])
 
 	useEffect(() => {
 		if (
@@ -281,28 +269,28 @@ export default function App() {
 	const handleCopy = async (gif: GifItem) => {
 		try {
 			await navigator.clipboard.writeText(gif.gifUrl)
-			showToast('Ссылка скопирована')
+			showToast(t.toast.linkCopied)
 		} catch {
-			showToast('Не удалось скопировать ссылку')
+			showToast(t.toast.copyFailed)
 		}
 	}
 
 	const handleDownload = async (gif: GifItem) => {
 		try {
 			await downloadGif(gif, mode === 'search' ? lastSubmittedQuery : '')
-			showToast('GIF скачивается')
+			showToast(t.toast.downloadStarted)
 		} catch (error) {
 			showToast(
 				error instanceof Error
-					? error.message
-					: 'Не удалось скачать GIF',
+					? getLocalizedErrorMessage(language, error.message)
+					: t.toast.downloadFailed,
 			)
 		}
 	}
 
 	const handleEmptySubmit = () => {
 		setIsSuggestionsOpen(false)
-		showToast('Введите запрос для поиска')
+		showToast(t.toast.enterSearchQuery)
 	}
 
 	const handleQueryChange = (nextQuery: string) => {
@@ -320,9 +308,11 @@ export default function App() {
 			<div className='mx-auto max-w-6xl'>
 				<Header
 					activeMode={mode}
+					language={language}
 					onSearchMode={handleSearchMode}
 					onTrending={handleTrending}
 					onRandom={handleRandom}
+					onLanguageChange={setLanguage}
 				/>
 
 				{mode === 'search' && (
@@ -332,6 +322,7 @@ export default function App() {
 					>
 						<SearchBar
 							value={query}
+							language={language}
 							isLoading={gifQuery.isFetching}
 							onChange={handleQueryChange}
 							onClear={handleClearQuery}
@@ -349,9 +340,8 @@ export default function App() {
 
 				{mode === 'trending' && (
 					<TrendFilters
-						dateFilter={dateFilter}
+						language={language}
 						ratingFilter={ratingFilter}
-						onDateFilterChange={setDateFilter}
 						onRatingFilterChange={setRatingFilter}
 					/>
 				)}
@@ -359,6 +349,7 @@ export default function App() {
 				{mode === 'random' ? (
 					<RandomGifPanel
 						gif={gifQuery.data?.[0] ?? null}
+						language={language}
 						isLoading={gifQuery.isLoading || gifQuery.isFetching}
 						error={gifQuery.error}
 						onNext={handleRandom}
@@ -369,6 +360,7 @@ export default function App() {
 				) : (
 					<GifGrid
 						gifs={visibleGifs}
+						language={language}
 						isLoading={
 							(gifQuery.isLoading && loadedGifs.length === 0) ||
 							(mode === 'trending' &&
@@ -393,6 +385,7 @@ export default function App() {
 			</div>
 			<GifModal
 				gif={selectedGif}
+				language={language}
 				onClose={() => setSelectedGif(null)}
 				onCopy={handleCopy}
 				onDownload={handleDownload}
